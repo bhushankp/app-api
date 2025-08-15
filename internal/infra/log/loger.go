@@ -1,17 +1,23 @@
 package log
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+)
 
-var L *zap.Logger
+var Logger *zap.Logger
 
 func Init(env string) {
 	var err error
-	if env == "prod" {
-		L, err = zap.NewProduction()
+	if env == "production" || env == "prod" {
+		Logger, err = zap.NewProduction()
 	} else {
-		L, err = zap.NewDevelopment()
+		Logger, err = zap.NewDevelopment()
 	}
 	if err != nil {
-		panic(err)
+		panic("cannot init logger: " + err.Error())
 	}
+}
+
+func Sync() {
+	_ = Logger.Sync()
 }
