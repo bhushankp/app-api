@@ -1,59 +1,68 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	AppEnv         string
-	HTTPPort       string
-	DB_DSN         string
-	DB_MaxOpen     int
-	DB_MaxIdle     int
-	DB_MaxLifeTime time.Duration
+	AppEnv        string
+	HTTPPort      string
+	DBDSN         string
+	DBMaxOpen     int
+	DBMaxIdle     int
+	DBMaxLifetime time.Duration
 }
 
 func Load() *Config {
+	// Load .env if present
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		AppEnv:         mustGet("APP_ENV"),
-		HTTPPort:       mustGet("HTTP_PORT"),
-		DB_DSN:         mustGet("DB_DSN"),
-		DB_MaxOpen:     mustGetInt("DB_MAX_OPEN"),
-		DB_MaxIdle:     mustGetInt("DB_MAX_IDLE"),
-		DB_MaxLifeTime: mustGetDuration("DB_MAX_LIFETIME"),
+		AppEnv:        getEnvOrFail("APP_ENV"),
+		HTTPPort:      getEnvOrFail("HTTP_PORT"),
+		DBDSN:         getEnvOrFail("DB_DSN"),
+		DBMaxOpen:     getEnvAsIntOrDefault("DB_MAX_OPEN", 25),
+		DBMaxIdle:     getEnvAsIntOrDefault("DB_MAX_IDLE", 10),
+		DBMaxLifetime: getEnvAsDurationOrDefault("DB_MAX_LIFETIME", 300*time.Second),
 	}
+
 	return cfg
 }
 
-func mustGet(key string) string {
-	val, ok := os.LookupEnv(key)
-	if !ok {
-		log.Fatalf("missing required env : %s", key)
+func getEnvOrFail(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("Missing required env var: %s", key)
 	}
 	return val
 }
 
-func mustGetInt(key string) int {
-	val := mustGet(key)
-	i, err := strconv.Atoi(val)
-	if err != nil {
-		log.Fatalf("invalid int for %s: %v", key, err)
+func getEnvAsIntOrDefault(key string, def int) int {
+	val := os.Getenv(key)
+	if val == "" {
+		return def
 	}
-	return i
+	var out int
+	_, err := fmt.Sscanf(val, "%d", &out)
+	if err != nil {
+		return def
+	}
+	return out
 }
 
-func mustGetDuration(key string) time.Duration {
-	val := mustGet(key)
-	t, err := time.ParseDuration(val)
-	if err != nil {
-		log.Fatalf("invald duration for %s: %v", key, err)
+func getEnvAsDurationOrDefault(key string, def time.Duration) time.Duration {
+	val := os.Getenv(key)
+	if val == "" {
+		return def
 	}
-	return t
+	dur, err := time.ParseDuration(val)
+	if err != nil {
+		return def
+	}
+	return dur
 }
