@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/yourname/go-backend-sprint1/pkg/respond"
+	"github.com/bhushankp/app-api.git/internal/pkg/respond"
 )
 
 type DBPinger interface {
